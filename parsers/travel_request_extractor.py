@@ -67,6 +67,7 @@ class TravelRequestExtractor:
         self.extract_name(request, english_text)
 
         self.extract_pax(request, english_text)
+        self.extract_duration(request, english_text)
         self.extract_budget(request, english_text)
 
         self.extract_destinations(request, english_text)
@@ -144,7 +145,11 @@ class TravelRequestExtractor:
             r'(\d+)\s+pax',
             r'group\s+of\s+(\d+)',
             r'(\d+)\s+people',
-            r'(\d+)\s+persons'
+            r'(\d+)\s+persons',
+            r'(\d+)\s+travelers',
+            r'(\d+)\s+travellers',
+            r'(\d+)\s+guests',
+            r'family\s+of\s+(\d+)'
         ]
 
         for pattern in patterns:
@@ -161,6 +166,68 @@ class TravelRequestExtractor:
                 )
 
                 return
+
+        if re.search(
+            r'\bcouple\b|honeymoon',
+            text.lower()
+        ):
+
+            request.pax = 2
+
+            return
+
+        adult = re.search(
+            r'(\d+)\s+adult',
+            text.lower()
+        )
+
+        child = re.search(
+            r'(\d+)\s+(?:kid|child|children)',
+            text.lower()
+        )
+
+        if adult:
+
+            request.pax = int(adult.group(1))
+
+            if child:
+
+                request.pax += int(child.group(1))
+
+        elif child:
+
+            request.pax = int(child.group(1))
+
+    # --------------------------------------------------
+    # DURATION
+    # --------------------------------------------------
+
+    def extract_duration(self, request, text):
+
+        lower = text.lower()
+
+        day_match = re.search(
+            r'(\d+)\s*(?:days|day|d)\b',
+            lower
+        )
+
+        night_match = re.search(
+            r'(\d+)\s*(?:nights|night|n)\b',
+            lower
+        )
+
+        if day_match:
+            request.days = int(day_match.group(1))
+
+        if night_match:
+            request.nights = int(night_match.group(1))
+
+        if request.days <= 0 and request.nights > 0:
+            request.days = request.nights + 1
+
+        if request.nights <= 0 and request.days > 0:
+            request.nights = request.days - 1
+
 
     # --------------------------------------------------
     # BUDGET
