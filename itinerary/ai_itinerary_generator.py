@@ -147,6 +147,21 @@ class DeepSeekItineraryGenerator:
             lines.append(
                 f"\nIMPORTANT: build exactly {request.days} day(s)."
             )
+        elif request.nights > 0:
+            lines.append(
+                f"\nIMPORTANT: build a {request.nights}-night trip "
+                f"(i.e. {request.nights} nights of overnight stays, "
+                f"usually {request.nights + 1} calendar days)."
+            )
+        else:
+            lines.append(
+                "\nThe customer did not specify a trip duration. "
+                "Choose a realistic duration yourself and build exactly "
+                "that many days, based on the destinations and activities: "
+                "as a rule of thumb allow 1 to 2 days per major destination "
+                "(minimum 1 day, maximum 14 days). State the chosen total "
+                "number of days in the title of day 1."
+            )
 
         return "\n\n".join(lines) or "Build a 3-day Nepal itinerary."
 

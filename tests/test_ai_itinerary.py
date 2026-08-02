@@ -161,6 +161,44 @@ assert result_rule2 == result, "rule mode must stay identical"
 
 print("OK: rule mode still identical")
 
+print("=== Test 6: duration prompt guidance ===")
+
+gen_prompt = SmartItineraryGenerator(mode="rule")
+
+req_no_dur = TravelRequest()
+req_no_dur.raw_text = "Nepal trip to Kathmandu Pokhara Chitwan for 2 people"
+req_no_dur.destinations = ["Kathmandu", "Pokhara", "Chitwan"]
+req_no_dur.pax = 2
+req_no_dur.days = 0
+req_no_dur.nights = 0
+
+prompt_auto = gen_prompt.deepseek_engine._build_prompt(req_no_dur)
+
+assert "did not specify a trip duration" in prompt_auto, (
+    "no-duration prompt must tell the AI to infer a duration"
+)
+assert "1 to 2 days per major destination" in prompt_auto
+
+req_with_days = TravelRequest()
+req_with_days.raw_text = "10 days Nepal tour"
+req_with_days.destinations = ["Kathmandu", "Pokhara", "Chitwan", "Lumbini"]
+req_with_days.days = 10
+
+prompt_days = gen_prompt.deepseek_engine._build_prompt(req_with_days)
+
+assert "build exactly 10 day(s)" in prompt_days
+
+req_with_nights = TravelRequest()
+req_with_nights.raw_text = "5 nights Pokhara"
+req_with_nights.destinations = ["Pokhara"]
+req_with_nights.nights = 5
+
+prompt_nights = gen_prompt.deepseek_engine._build_prompt(req_with_nights)
+
+assert "5-night trip" in prompt_nights
+
+print("OK: duration prompt guidance passed")
+
 os.environ["DEEPSEEK_API_KEY"] = saved_key
 os.environ["OPENAI_API_KEY"] = saved_openai
 os.environ["AI_PROVIDER"] = saved_provider
