@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}Generate Quotation - PM Automation{% endblock %}
+{% block head %}
+<style>
+.tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.tab { padding: 9px 18px; border-radius: 6px; background: #eef1f4; color: #555; cursor: pointer; border: 1px solid #d4d9de; font-size: 14px; }
+.tab.active { background: #0f4c81; color: #fff; border-color: #0f4c81; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+input[type=file] { font-size: 14px; }
+.sug-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.sug-box { border: 1px solid #e2e6ea; border-radius: 8px; padding: 14px 16px; }
+.sug-box h4 { margin: 0 0 8px; color: #0f4c81; font-size: 14px; }
+.sug-box ul { margin: 0; padding-left: 18px; line-height: 1.9; }
+#map { height: 380px; border-radius: 8px; border: 1px solid #e2e6ea; }
+</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
+{% endblock %}
+{% block content %}
+<h2 class="page">Generate Quotation</h2>
+
+{% if error %}
+<div class="flash">{{ error }}</div>
+{% endif %}
+
+<form method="post" action="/generate" enctype="multipart/form-data">
+  <div class="card">
+    <h3>Customer Inquiry</h3>
+    <div class="tabs">
+      <div class="tab {{ 'active' if mode == 'text' else '' }}" data-tab="text">Raw Text</div>
+      <div class="tab {{ 'active' if mode == 'url' else '' }}" data-tab="url">Website URL</div>
+      <div class="tab {{ 'active' if mode == 'file' else '' }}" data-tab="file">Upload File</div>
+    </div>
+
+    <input type="hidden" name="mode" id="mode" value="{{ mode }}">
+
+    <div class="tab-panel {{ 'active' if mode == 'text' else '' }}" id="panel-text">
+      <textarea name="inquiry" placeholder="Paste the customer inquiry, e.g.:&#10;My name is John Smith. Email john@test.com. Phone +9779811111111. We are 6 pax. Kathmandu Pokhara Chitwan. Budget 2500 USD.">{{ inquiry }}</textarea>
+    </div>
+
+    <div class="tab-panel {{ 'active' if mode == 'url' else '' }}" id="panel-url">
+      <label>Website URL</label>
+      <input type="text" name="url" placeholder="https://example.com/customers/inquiry" value="{{ url }}">
+      <p class="muted">Fetch the page content and extract the travel inquiry from it.</p>
+    </div>
+
+    <div class="tab-panel {{ 'active' if mode == 'file' else '' }}" id="panel-file">
+      <label>Choose a file</label>
+      <input type="file" name="file" accept=".pdf,.docx,.txt,.rtf,.xlsx,.xls,.csv,.jpg,.jpeg,.png,.webp,.bmp,.tiff,.eml">
+      <p class="muted">Supported: PDF, DOCX, TXT, RTF, XLSX, XLS, CSV, images (OCR), EML email files.</p>
+    </div>
+
+    <div style="margin-top:16px">
+      <button type="submit">Generate Quotation</button>
+      <a class="btn ghost" href="/generate">Clear</a>
+    </div>
+  </div>
+</form>
+
+{% if source_info %}
+<div class="card">
+  <h3>Input Source</h3>
+  <table>
+    <tr><td>Type</td><td><span class="chip">{{ source_info.type }}</span></td></tr>
+    {% if source_info.file %}<tr><td>File</td><td>{{ source_info.file }}</td></tr>{% endif %}
+    {% if source_info.engine %}<tr><td>Parser</td><td>{{ source_info.engine }}</td></tr>{% endif %}
+  </table>
+</div>
+{% endif %}
+
+{% if req %}
+<div class="card">
+  <h3>Extracted Inquiry</h3>
+  <div class="grid">
+    <div><label>Name</label><strong>{{ req.customer_name or '-' }}</strong></div>
+    <div><label>Email</label><strong>{{ req.customer_email or '-' }}</strong></div>
+    <div><label>Phone</label><strong>{{ req.customer_phone or '-' }}</strong></div>
+    <div><label>Pax</label><strong>{{ req.pax or '-' }}</strong></div>
+    <div><label>Budget</label><strong>{{ req.budget }} {{ req.currency }}</strong></div>
+    <div><label>Language</label><strong>{{ req.language }}</strong></div>
+  </div>
+  <div class="grid">
+    <div><label>Destinations</label>{% for d in req.destinations %}<span class="chip">{{ d }}</span>{% endfor %}</div>
+    <div><label>Arrival / Departure</label><strong>{{ req.arrival_date or '-' }} / {{ req.departure_date or '-' }}</strong></div>
+    <div><label>Hotels</label><strong>{{ req.hotels | join(', ') or '-' }}</strong></div>
+    <div><label>Activities</label><strong>{{ req.activities | join(', ') or '-' }}</strong></div>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Itinerary</h3>
+  {% for day in itinerary %}
+  <div style="margin-bottom:16px">
+    <h4 style="margin:0 0 4px">Day {{ day.day }} - {{ day.title }}</h4>
+    <ul>
+      <li>City: {{ day.city }} &middot; Overnight: {{ day.overnight }} &middot; Hotel: {{ day.hotel_category }}</li>
+      <li>Meals: {{ day.meals | join(', ') }}</li>
+      <li>Transport: {{ day.transport }}</li>
+      <li>Activities: {{ day.activities | join(', ') }}</li>
+      <li>Notes: {{ day.notes }}</li>
+    </ul>
+  </div>
+  {% endfor %}
+</div>
+
+{% if route %}
+<div class="card">
+  <h3>Tour Map</h3>
+  <div id="map"></div>
+  <p class="muted">Route plotted on free OpenStreetMap tiles (Leaflet, open source).</p>
+</div>
+{% endif %}
+
+<div class="card">
+  <h3>Costing</h3>
+  <table>
+    <tr><th>Item</th><th>Amount ({{ costing.currency }})</th></tr>
+    <tr><td>Hotel</td><td>{{ costing.hotel_cost }}</td></tr>
+    <tr><td>Vehicle</td><td>{{ costing.vehicle_cost }}</td></tr>
+    <tr><td>Guide</td><td>{{ costing.guide_cost }}</td></tr>
+    <tr><td>Activities</td><td>{{ costing.activity_cost }}</td></tr>
+    <tr><td>Subtotal</td><td>{{ costing.subtotal }}</td></tr>
+    <tr><td>Profit (20%)</td><td>{{ costing.profit }}</td></tr>
+    <tr><td>VAT (13%)</td><td>{{ costing.vat }}</td></tr>
+    <tr class="total"><td>Grand Total</td><td>{{ costing.grand_total }} {{ costing.currency }}</td></tr>
+  </table>
+</div>
+
+{% if suggestions %}
+<div class="card">
+  <h3>Suggestions</h3>
+  <div class="sug-grid">
+    <div class="sug-box">
+      <h4>Recommended Activities</h4>
+      <ul>{% for item in suggestions.activities %}<li>{{ item }}</li>{% endfor %}</ul>
+    </div>
+    <div class="sug-box">
+      <h4>Food Experiences</h4>
+      <ul>{% for item in suggestions.food %}<li>{{ item }}</li>{% endfor %}</ul>
+    </div>
+    <div class="sug-box">
+      <h4>Souvenirs</h4>
+      <ul>{% for item in suggestions.souvenirs %}<li>{{ item }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <a class="btn green" href="/records">View saved records</a>
+</div>
+{% endif %}
+
+<script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
+<script>
+document.querySelectorAll('.tab').forEach(function (tab) {
+  tab.addEventListener('click', function () {
+    document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
+    document.querySelectorAll('.tab-panel').forEach(function (p) { p.classList.remove('active'); });
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+    document.getElementById('mode').value = tab.dataset.tab;
+  });
+});
+
+{% if route and route | length > 0 %}
+(function () {
+  L.Icon.Default.imagePath = '{{ url_for('static', filename='leaflet/images') }}';
+  var route = {{ route | tojson }};
+  var points = route.map(function (p) { return [p.lat, p.lng]; });
+
+  var map = L.map('map');
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  route.forEach(function (p, i) {
+    L.marker([p.lat, p.lng]).addTo(map)
+      .bindPopup('<strong>' + (i + 1) + '. ' + p.name + '</strong>');
+  });
+
+  if (points.length > 1) {
+    L.polyline(points, { color: '#0f4c81', weight: 3 }).addTo(map);
+  }
+
+  map.fitBounds(L.latLngBounds(points).pad(0.2));
+})();
+{% endif %}
+</script>
+{% endblock %}

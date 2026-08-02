@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Secrets & local data
+.env
+data/
+logs/
+storage/
+*.db
+
+# Local tools / heavy dirs not needed on server
+docker/
+waha/
+n8n/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

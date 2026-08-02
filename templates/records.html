@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Saved Records - PM Automation{% endblock %}
+{% block content %}
+<h2 class="page">Saved Records</h2>
+
+{% for kind, label, files in [("requests", "Travel Requests", requests), ("itineraries", "Itineraries", itineraries), ("costings", "Costings", costings)] %}
+<div class="card">
+  <h3>{{ label }} <span class="muted">({{ files | length }})</span></h3>
+  {% if files %}
+  <table>
+    <tr><th>File</th><th>Preview</th><th>Saved</th><th>Actions</th></tr>
+    {% for f in files %}
+    <tr>
+      <td><a href="/record/{{ kind }}/{{ f.file }}">{{ f.file }}</a></td>
+      <td class="muted">{{ f.preview }}</td>
+      <td class="muted">{{ f.saved }}</td>
+      <td>
+        <a class="btn ghost small" href="/record/{{ kind }}/{{ f.file }}">View</a>
+        <a class="btn small" href="/export/{{ kind }}/{{ f.file }}?format=pdf">PDF</a>
+        <a class="btn small" href="/export/{{ kind }}/{{ f.file }}?format=docx">DOCX</a>
+        <a class="btn small" href="/export/{{ kind }}/{{ f.file }}?format=xlsx">XLSX</a>
+        <a class="btn small" href="/export/{{ kind }}/{{ f.file }}?format=html">HTML</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No {{ kind }} saved yet.</p>
+  {% endif %}
+</div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,12 @@
+# Build context for deploy/Dockerfile
+.venv/
+data/
+logs/
+storage/
+__pycache__/
+**/__pycache__/
+*.pyc
+.git/
+.env
+waha/
+n8n/

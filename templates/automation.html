@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Automation - PM Automation{% endblock %}
+{% block content %}
+<h2 class="page">Automation</h2>
+
+<div class="grid">
+  <div class="stat"><div class="num">{{ 'ON' if enabled else 'OFF' }}</div><div class="lbl">Automation</div></div>
+  <div class="stat"><div class="num">{{ 'Running' if running else 'Stopped' }}</div><div class="lbl">Scheduler</div></div>
+  <div class="stat"><div class="num">{{ interval }}s</div><div class="lbl">Poll interval</div></div>
+  <div class="stat"><div class="num">{{ lead_count }}</div><div class="lbl">Leads</div></div>
+</div>
+
+<div class="card">
+  <h3>Connected Services</h3>
+  <table>
+    <tr><td>IMAP (inbox)</td><td><code>{{ imap_user or '-' }}</code></td><td>{{ 'configured' if imap_user else 'missing' }}</td></tr>
+    <tr><td>SMTP (send)</td><td><code>{{ admin_email or '-' }}</code></td><td>{{ 'configured' if admin_email else 'missing' }}</td></tr>
+    <tr><td>WhatsApp (Waha)</td><td><code>{{ whatsapp_phone or '-' }}</code></td><td>{{ 'configured' if whatsapp_phone else 'missing' }}</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3>How it works</h3>
+  <p>Every {{ interval }} seconds the scheduler polls the inbox for new (unseen) emails. Each new inquiry is run through the full pipeline:</p>
+  <ul>
+    <li>Extract travel request (name, email, pax, destinations, budget...)</li>
+    <li>Generate itinerary + costing</li>
+    <li>Save records (requests / itineraries / costings)</li>
+    <li>Create a CRM lead</li>
+    <li>Auto-reply to the customer with the quotation</li>
+    <li>Send an internal alert email + WhatsApp alert</li>
+  </ul>
+  <p class="muted">Already-processed email UIDs are tracked so nothing is double-processed.</p>
+</div>
+
+<div class="card">
+  <h3>Processed Email UIDs</h3>
+  {% if processed %}
+  <pre>{{ processed }}</pre>
+  {% else %}
+  <p class="muted">No emails processed yet.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h3>Automation Log</h3>
+  {% if log %}
+  <pre>{{ log }}</pre>
+  {% else %}
+  <p class="muted">Log is empty.</p>
+  {% endif %}
+</div>
+{% endblock %}

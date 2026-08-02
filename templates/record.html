@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ kind }} - {{ file }} - PM Automation{% endblock %}
+{% block content %}
+<h2 class="page">{{ kind | title }} &middot; <code>{{ file }}</code></h2>
+
+<div class="card">
+  <h3>Actions</h3>
+  <a class="btn" href="/export/{{ kind }}/{{ file }}?format=pdf">Download PDF</a>
+  <a class="btn" href="/export/{{ kind }}/{{ file }}?format=docx">Download DOCX</a>
+  <a class="btn" href="/export/{{ kind }}/{{ file }}?format=xlsx">Download XLSX</a>
+  <a class="btn" href="/export/{{ kind }}/{{ file }}?format=html">Download HTML</a>
+  <a class="btn ghost" href="/records">&larr; Back</a>
+</div>
+
+<div class="card">
+  <h3>JSON Content</h3>
+  <pre>{{ payload }}</pre>
+</div>
+{% endblock %}

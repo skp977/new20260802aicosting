@@ -1,0 +1,70 @@
+name: pmautomation
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: pmautomation_web
+    command: gunicorn deploy.wsgi:app --bind 0.0.0.0:5000 --workers 1 --threads 8 --timeout 120
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      - WAHA_API_URL=http://waha:3000
+    volumes:
+      - ../data:/app/data
+    depends_on:
+      - waha
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: pmautomation_api
+    command: uvicorn api.main_api:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      - WAHA_API_URL=http://waha:3000
+    volumes:
+      - ../data:/app/data
+    depends_on:
+      - waha
+
+  waha:
+    image: devlikeapro/waha:latest
+    container_name: pmautomation_waha
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      - WAHA_API_KEY=${WAHA_API_KEY:-changeme}
+      - WHATSAPP_DEFAULT_ENGINE=GOWS
+    volumes:
+      - waha-sessions:/app/.sessions
+
+  caddy:
+    image: caddy:2
+    container_name: pmautomation_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file:
+      - ./.env.prod
+    environment:
+      - SITE_URL=${SITE_URL:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - web
+      - api
+
+volumes:
+  waha-sessions:
+  caddy-data:
+  caddy-config:

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}PM Automation{% endblock %}</title>
+<style>
+* { box-sizing: border-box; }
+body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; margin: 0; background: #f4f6f8; color: #222; }
+.layout { display: flex; min-height: 100vh; }
+.sidebar { width: 230px; background: #0f4c81; color: #fff; flex-shrink: 0; display: flex; flex-direction: column; }
+.sidebar .brand { padding: 22px 20px; border-bottom: 1px solid rgba(255,255,255,.15); }
+.sidebar .brand h1 { margin: 0; font-size: 20px; }
+.sidebar .brand p { margin: 4px 0 0; font-size: 12px; opacity: .8; }
+.sidebar nav { flex: 1; padding: 12px 0; }
+.sidebar nav a { display: block; padding: 12px 20px; color: #dfe8f2; text-decoration: none; font-size: 14px; border-left: 3px solid transparent; }
+.sidebar nav a:hover { background: rgba(255,255,255,.08); color: #fff; }
+.sidebar nav a.active { background: rgba(255,255,255,.14); color: #fff; border-left-color: #ffc107; }
+.sidebar .foot { padding: 14px 20px; font-size: 11px; opacity: .6; border-top: 1px solid rgba(255,255,255,.15); }
+.content { flex: 1; padding: 28px 32px; max-width: 1100px; }
+h2.page { margin: 0 0 20px; font-size: 22px; color: #0f4c81; }
+.card { background: #fff; border-radius: 8px; padding: 20px 24px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 20px; }
+.card h3 { margin: 0 0 12px; font-size: 16px; color: #0f4c81; }
+textarea { width: 100%; min-height: 130px; font-family: Consolas, monospace; font-size: 14px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+input[type=text], select { width: 100%; padding: 9px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+label { font-size: 13px; color: #555; display: block; margin: 10px 0 4px; }
+button, .btn { background: #0f4c81; color: #fff; border: 0; padding: 10px 24px; font-size: 14px; border-radius: 6px; cursor: pointer; text-decoration: none; display: inline-block; }
+button:hover, .btn:hover { background: #0a3a63; }
+.btn.ghost { background: #eef1f4; color: #0f4c81; }
+.btn.green { background: #1a7f37; }
+.btn.small { padding: 6px 12px; font-size: 12px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e2e6ea; font-size: 14px; }
+th { background: #eef1f4; }
+.total td { font-weight: bold; background: #fff7e0; }
+ul { margin: 0; padding-left: 20px; line-height: 1.9; }
+code, pre { background: #f2f4f7; border-radius: 6px; font-size: 13px; }
+pre { padding: 12px; overflow-x: auto; }
+code { padding: 2px 6px; }
+.ok { color: #1a7f37; font-weight: bold; }
+.err { color: #b3261e; font-weight: bold; }
+.muted { color: #888; font-size: 12px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.stat { background: #fff; border-radius: 8px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.stat .num { font-size: 26px; font-weight: bold; color: #0f4c81; }
+.stat .lbl { font-size: 13px; color: #666; margin-top: 4px; }
+.chip { display: inline-block; background: #eef1f4; border-radius: 12px; padding: 3px 10px; font-size: 12px; margin: 2px 2px 0 0; }
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px; }
+.flash { background: #fff3cd; border: 1px solid #ffe08a; color: #664d03; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 14px; }
+a { color: #0f4c81; }
+</style>
+{% block head %}{% endblock %}
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>PM Automation</h1>
+      <p>Nepal International Travel Services</p>
+    </div>
+    <nav>
+      <a href="/" class="{{ 'active' if active == 'dashboard' }}">Dashboard</a>
+      <a href="/generate" class="{{ 'active' if active == 'generate' }}">Generate Quotation</a>
+      <a href="/records" class="{{ 'active' if active == 'records' }}">Saved Records</a>
+      <a href="/automation" class="{{ 'active' if active == 'automation' }}">Automation</a>
+      <a href="/health" target="_blank">Health Check</a>
+      <a href="http://127.0.0.1:8000/docs" target="_blank">FastAPI Docs</a>
+    </nav>
+    <div class="foot">PM Automation Platform &middot; 2026</div>
+  </aside>
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,88 @@
+# Render Blueprint for PM Automation (test deploy)
+# Replace <YOUR_GITHUB_USERNAME> below with your GitHub username.
+# After pushing to GitHub, use: New + -> Blueprint -> Select this repo.
+
+services:
+  - type: web
+    name: pmautomation-web
+    runtime: docker
+    repo: https://github.com/<YOUR_GITHUB_USERNAME>/pmautomation
+    plan: free
+    dockerfilePath: deploy/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "5000"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: WAHA_API_URL
+        value: https://pmautomation-waha.onrender.com
+      - key: WAHA_SESSION
+        value: default
+      - key: WHATSAPP_PHONE
+        sync: false
+      - key: WAHA_API_KEY
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: EMAIL_HOST
+        value: imap.gmail.com
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASSWORD
+        sync: false
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: AUTOMATION_ENABLED
+        value: "true"
+      - key: AUTOMATION_POLL_SECONDS
+        value: "60"
+      - key: AUTOMATION_MARK_PROCESSED
+        value: "false"
+
+  - type: web
+    name: pmautomation-api
+    runtime: docker
+    repo: https://github.com/<YOUR_GITHUB_USERNAME>/pmautomation
+    plan: free
+    dockerfilePath: deploy/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8000"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: WAHA_API_URL
+        value: https://pmautomation-waha.onrender.com
+      - key: WAHA_SESSION
+        value: default
+      - key: WHATSAPP_PHONE
+        sync: false
+      - key: WAHA_API_KEY
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASSWORD
+        sync: false
+      - key: AUTOMATION_ENABLED
+        value: "true"
+
+  - type: web
+    name: pmautomation-waha
+    runtime: docker
+    repo: https://github.com/<YOUR_GITHUB_USERNAME>/pmautomation
+    plan: free
+    dockerfilePath: deploy/Dockerfile.waha
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "3000"
+      - key: WAHA_API_KEY
+        sync: false
+      - key: WHATSAPP_DEFAULT_ENGINE
+        value: GOWS

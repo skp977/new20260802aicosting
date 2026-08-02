@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - PM Automation{% endblock %}
+{% block content %}
+<h2 class="page">Dashboard</h2>
+
+<div class="grid">
+  <div class="stat"><div class="num">{{ counts.requests }}</div><div class="lbl">Travel Requests</div></div>
+  <div class="stat"><div class="num">{{ counts.itineraries }}</div><div class="lbl">Itineraries</div></div>
+  <div class="stat"><div class="num">{{ counts.costings }}</div><div class="lbl">Costings</div></div>
+  <div class="stat"><div class="num">{{ counts.exports }}</div><div class="lbl">Exports</div></div>
+</div>
+
+<div class="card">
+  <h3>System Status</h3>
+  <table>
+    <tr><td>Flask server</td><td><span class="ok">Running</span></td></tr>
+    <tr><td>Started at</td><td><code>{{ started }}</code></td></tr>
+    <tr><td>Python version</td><td><code>{{ pyver }}</code></td></tr>
+    <tr><td>Working directory</td><td><code>{{ base_dir }}</code></td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h3>Pipeline</h3>
+  <p>Inquiry text &rarr; Language detect &amp; translate &rarr; Extract &rarr; Itinerary &rarr; Costing &rarr; Save (JSON) &rarr; Export (PDF / DOCX / XLSX / HTML)</p>
+  <a class="btn" href="/generate">Generate a quotation</a>
+</div>
+
+<div class="card">
+  <h3>Latest Requests</h3>
+  {% if latest %}
+  <table>
+    <tr><th>File</th><th>Email</th><th>Pax</th><th>Destinations</th><th>Saved</th></tr>
+    {% for r in latest %}
+    <tr>
+      <td><a href="/record/requests/{{ r.file }}">{{ r.file }}</a></td>
+      <td>{{ r.email or '-' }}</td>
+      <td>{{ r.pax or '-' }}</td>
+      <td>{{ r.destinations | join(', ') or '-' }}</td>
+      <td class="muted">{{ r.saved }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No requests yet. Generate one from the <a href="/generate">form</a>.</p>
+  {% endif %}
+</div>
+{% endblock %}
