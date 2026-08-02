@@ -29,7 +29,7 @@ LAST UPDATED
 import re
 
 from parsers.travel_request_extractor import TravelRequestExtractor
-from itinerary.itinerary_engine import ItineraryEngine
+from itinerary.ai_itinerary_generator import SmartItineraryGenerator
 from costing.master_costing_engine import MasterCostingEngine
 from storage.save_manager import SaveManager
 from crm.lead_manager import LeadManager
@@ -42,7 +42,7 @@ class EmailRequestOrchestrator:
 
     def __init__(self):
         self.extractor = TravelRequestExtractor()
-        self.itinerary_engine = ItineraryEngine()
+        self.itinerary_engine = SmartItineraryGenerator()
         self.costing_engine = MasterCostingEngine()
         self.storage = SaveManager()
         self.leads = LeadManager()
