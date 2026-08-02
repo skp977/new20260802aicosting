@@ -4,16 +4,13 @@
 services:
   - type: web
     name: pmautomation-web
-    runtime: docker
+    runtime: python
     repo: https://github.com/skp977/new20260802aicosting
     plan: free
-    dockerfilePath: deploy/Dockerfile
-    dockerContext: .
-    startCommand: gunicorn deploy.wsgi:app --bind 0.0.0.0:5000 --workers 1 --threads 8 --timeout 120
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn deploy.wsgi:app --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 120
     healthCheckPath: /health
     envVars:
-      - key: PORT
-        value: "5000"
       - key: PYTHONUNBUFFERED
         value: "1"
       - key: WAHA_API_URL
@@ -45,16 +42,13 @@ services:
 
   - type: web
     name: pmautomation-api
-    runtime: docker
+    runtime: python
     repo: https://github.com/skp977/new20260802aicosting
     plan: free
-    dockerfilePath: deploy/Dockerfile
-    dockerContext: .
-    startCommand: uvicorn api.main_api:app --host 0.0.0.0 --port 8000
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api.main_api:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
-      - key: PORT
-        value: "8000"
       - key: PYTHONUNBUFFERED
         value: "1"
       - key: WAHA_API_URL
@@ -79,7 +73,6 @@ services:
     plan: free
     dockerfilePath: deploy/Dockerfile.waha
     dockerContext: .
-    healthCheckPath: /health
     envVars:
       - key: PORT
         value: "3000"
