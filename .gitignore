@@ -7,7 +7,6 @@ __pycache__/
 .env
 data/
 logs/
-storage/
 *.db
 
 # Local tools / heavy dirs not needed on server
