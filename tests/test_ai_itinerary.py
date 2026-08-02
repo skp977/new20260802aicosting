@@ -9,10 +9,13 @@ sys.path.append(
 from models.travel_request import TravelRequest
 from itinerary.ai_itinerary_generator import (
     DeepSeekItineraryGenerator,
+    OpenAIItineraryGenerator,
     SmartItineraryGenerator,
 )
 
 saved_key = os.environ.get("DEEPSEEK_API_KEY", "")
+saved_openai = os.environ.get("OPENAI_API_KEY", "")
+saved_provider = os.environ.get("AI_PROVIDER", "")
 os.environ["DEEPSEEK_API_KEY"] = ""
 
 request = TravelRequest()
@@ -95,6 +98,71 @@ print("OK: normalization passed")
 print("  Day 1:", days[0])
 print("  Day 2:", days[1])
 
+print("=== Test 4: provider selection ===")
+
+os.environ["OPENAI_API_KEY"] = "sk-test-openai"
+os.environ["AI_PROVIDER"] = "openai"
+os.environ["DEEPSEEK_API_KEY"] = ""
+
+gen_openai = SmartItineraryGenerator(mode="auto")
+
+assert isinstance(
+    gen_openai._select_ai_engine(), OpenAIItineraryGenerator
+), "AI_PROVIDER=openai must select OpenAI engine"
+assert gen_openai.openai_engine.api_key == "sk-test-openai"
+assert gen_openai.openai_engine.model == "gpt-4o-mini"
+assert gen_openai.openai_engine.base_url == "https://api.openai.com/v1"
+
+os.environ["AI_PROVIDER"] = "deepseek"
+
+gen_ds = SmartItineraryGenerator(mode="auto")
+
+assert isinstance(
+    gen_ds._select_ai_engine(), DeepSeekItineraryGenerator
+), "AI_PROVIDER=deepseek must select DeepSeek engine"
+
+os.environ["AI_PROVIDER"] = "auto"
+os.environ["DEEPSEEK_API_KEY"] = "sk-test-ds"
+os.environ["OPENAI_API_KEY"] = ""
+
+gen_auto_ds = SmartItineraryGenerator(mode="auto")
+
+assert isinstance(
+    gen_auto_ds._select_ai_engine(), DeepSeekItineraryGenerator
+), "auto must prefer DeepSeek key"
+
+os.environ["DEEPSEEK_API_KEY"] = ""
+os.environ["OPENAI_API_KEY"] = "sk-test-openai"
+
+gen_auto_oa = SmartItineraryGenerator(mode="auto")
+
+assert isinstance(
+    gen_auto_oa._select_ai_engine(), OpenAIItineraryGenerator
+), "auto with only OpenAI key must select OpenAI"
+
+os.environ["OPENAI_API_KEY"] = ""
+os.environ["AI_PROVIDER"] = "auto"
+
+gen_none = SmartItineraryGenerator(mode="auto")
+
+assert gen_none._select_ai_engine() is None, "no keys -> no AI engine"
+
+print("OK: provider selection passed")
+
+print("=== Test 5: rule mode unaffected by provider ===")
+
+os.environ["OPENAI_API_KEY"] = "sk-test-openai"
+
+gen_rule = SmartItineraryGenerator(mode="rule")
+
+result_rule2 = gen_rule.generate(request)
+
+assert result_rule2 == result, "rule mode must stay identical"
+
+print("OK: rule mode still identical")
+
 os.environ["DEEPSEEK_API_KEY"] = saved_key
+os.environ["OPENAI_API_KEY"] = saved_openai
+os.environ["AI_PROVIDER"] = saved_provider
 
 print("ALL TESTS PASSED")

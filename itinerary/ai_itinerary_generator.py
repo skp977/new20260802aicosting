@@ -3,9 +3,10 @@ FILE NAME:
 ai_itinerary_generator.py
 
 PURPOSE:
-Generate travel itineraries from a natural-language prompt using the
-DeepSeek API (OpenAI-compatible). Falls back to the rule-based
-ItineraryEngine when no API key is configured or the AI call fails.
+Generate travel itineraries from a natural-language prompt using an
+LLM provider (DeepSeek or OpenAI, both OpenAI-compatible). Falls back
+to the rule-based ItineraryEngine when no API key is configured or the
+AI call fails. Provider chosen via AI_PROVIDER (deepseek|openai|auto).
 
 INPUT:
 TravelRequest (raw_text / translated_text + extracted fields)
@@ -66,6 +67,7 @@ class DeepSeekItineraryGenerator:
 
     def __init__(self, api_key=None, model=None, base_url=None, timeout=None):
 
+        self.name = "DeepSeek"
         self.api_key = api_key or os.getenv("DEEPSEEK_API_KEY", "")
         self.model = model or os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
         self.base_url = base_url or os.getenv(
@@ -78,7 +80,9 @@ class DeepSeekItineraryGenerator:
     def generate(self, request):
 
         if not self.api_key:
-            logger.info("DEEPSEEK_API_KEY not set; AI itinerary skipped")
+            logger.info(
+                "%s API key not set; AI itinerary skipped", self.name
+            )
             return None
 
         prompt = self._build_prompt(request)
@@ -86,7 +90,9 @@ class DeepSeekItineraryGenerator:
         try:
             content = self._call_api(prompt)
         except Exception as exc:
-            logger.warning("DeepSeek itinerary call failed: %s", exc)
+            logger.warning(
+                "%s itinerary call failed: %s", self.name, exc
+            )
             return None
 
         return self._parse_itinerary(content, request)
@@ -264,13 +270,47 @@ class DeepSeekItineraryGenerator:
         return "4 Star"
 
 
+class OpenAIItineraryGenerator(DeepSeekItineraryGenerator):
+
+    def __init__(self, api_key=None, model=None, base_url=None, timeout=None):
+
+        self.name = "OpenAI"
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY", "")
+        self.model = model or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        self.base_url = base_url or os.getenv(
+            "OPENAI_BASE_URL", "https://api.openai.com/v1"
+        )
+        self.timeout = int(
+            timeout or os.getenv("OPENAI_TIMEOUT", "60")
+        )
+
+
 class SmartItineraryGenerator:
 
-    def __init__(self, mode=None):
+    def __init__(self, mode=None, provider=None):
 
         self.mode = (mode or os.getenv("ITINERARY_ENGINE", "auto")).lower()
+        self.provider = (
+            provider or os.getenv("AI_PROVIDER", "auto")
+        ).lower()
+
         self.rule_engine = ItineraryEngine()
-        self.ai_engine = DeepSeekItineraryGenerator()
+        self.deepseek_engine = DeepSeekItineraryGenerator()
+        self.openai_engine = OpenAIItineraryGenerator()
+
+    def _select_ai_engine(self):
+
+        if self.provider == "deepseek":
+            return self.deepseek_engine
+        if self.provider == "openai":
+            return self.openai_engine
+
+        if self.deepseek_engine.api_key:
+            return self.deepseek_engine
+        if self.openai_engine.api_key:
+            return self.openai_engine
+
+        return None
 
     def generate(self, request):
 
@@ -280,11 +320,17 @@ class SmartItineraryGenerator:
         ai_result = None
 
         if self.mode in ("auto", "ai"):
-            ai_result = self.ai_engine.generate(request)
+            ai_engine = self._select_ai_engine()
+
+            if ai_engine is not None:
+                ai_result = ai_engine.generate(request)
 
         if ai_result is None:
             logger.info(
-                "Using rule-based itinerary engine (mode=%s)", self.mode
+                "Using rule-based itinerary engine "
+                "(mode=%s, provider=%s)",
+                self.mode,
+                self.provider,
             )
             return self.rule_engine.generate(request)
 

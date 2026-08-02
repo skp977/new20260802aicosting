@@ -72,11 +72,19 @@ CONFIG = {
         os.getenv("AUTOMATION_MARK_PROCESSED"), False
     ),
 
-    # AI itinerary (DeepSeek, OpenAI-compatible)
+    # AI itinerary (LLM providers, OpenAI-compatible)
+    "AI_PROVIDER": os.getenv("AI_PROVIDER", "auto"),
+
     "DEEPSEEK_API_KEY": os.getenv("DEEPSEEK_API_KEY", ""),
     "DEEPSEEK_MODEL": os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
     "DEEPSEEK_BASE_URL": os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
     "DEEPSEEK_TIMEOUT": int(os.getenv("DEEPSEEK_TIMEOUT", "60")),
+
+    "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY", ""),
+    "OPENAI_MODEL": os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+    "OPENAI_BASE_URL": os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"),
+    "OPENAI_TIMEOUT": int(os.getenv("OPENAI_TIMEOUT", "60")),
+
     "ITINERARY_ENGINE": os.getenv("ITINERARY_ENGINE", "auto"),
 }
 
