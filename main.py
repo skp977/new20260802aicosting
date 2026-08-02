@@ -278,6 +278,7 @@ def generate():
             req=request_data,
             itinerary=result["itinerary"],
             costing=result["costing"],
+            price_estimate=result.get("price_estimate"),
             suggestions=suggestions,
             route=route
         )

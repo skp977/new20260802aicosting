@@ -30,6 +30,7 @@ import os
 import re
 
 from itinerary.itinerary_engine import ItineraryEngine
+from websearch.search_engine import WebSearchEngine
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,8 @@ SYSTEM_PROMPT = (
     "knowledge. You build realistic, day-by-day itineraries tailored to the "
     "traveler's request.\n\n"
     "Respond with ONLY valid JSON. No markdown, no code fences, no prose.\n"
-    'The JSON must be exactly: {"itinerary": [day, day, ...]} where each day '
+    'The JSON must be exactly: {"itinerary": [day, day, ...], '
+    '"price_estimate": {...} or null} where each day '
     'is an object with these keys:\n'
     '  "day": positive integer, sequential starting at 1\n'
     '  "title": short title for the day\n'
@@ -56,6 +58,12 @@ SYSTEM_PROMPT = (
     "for that day\n"
     '  "notes": one practical sentence (drive time, altitude, packing tip, '
     "etc.)\n\n"
+    '"price_estimate": null when no reliable price is available; otherwise '
+    'use the shape {"per_person": <number>, "currency": "<3-letter code>", '
+    '"note": "<1-2 sentences citing the live web sources, e.g. Based on '
+    "latest tour operator listings, ~$120-150/person/day inclusive.\"}. "
+    "Base the price on the LIVE WEB DATA provided in the user message, not "
+    "on your own guesses.\n\n"
     "Constraints:\n"
     "- Produce the exact number of days requested.\n"
     "- Use real, verifiable places and standard Nepal tourism routes.\n"
@@ -77,6 +85,9 @@ class DeepSeekItineraryGenerator:
             timeout or os.getenv("DEEPSEEK_TIMEOUT", "60")
         )
 
+        self.web_search = WebSearchEngine()
+        self.last_price_estimate = None
+
     def generate(self, request):
 
         if not self.api_key:
@@ -85,7 +96,11 @@ class DeepSeekItineraryGenerator:
             )
             return None
 
-        prompt = self._build_prompt(request)
+        self.last_price_estimate = None
+
+        web_data = self._search_web(request)
+
+        prompt = self._build_prompt(request, web_data)
 
         try:
             content = self._call_api(prompt)
@@ -97,7 +112,7 @@ class DeepSeekItineraryGenerator:
 
         return self._parse_itinerary(content, request)
 
-    def _build_prompt(self, request):
+    def _build_prompt(self, request, web_data=None):
 
         lines = []
 
@@ -163,7 +178,60 @@ class DeepSeekItineraryGenerator:
                 "number of days in the title of day 1."
             )
 
+        if web_data:
+            lines.append(self._format_web_data(web_data))
+
         return "\n\n".join(lines) or "Build a 3-day Nepal itinerary."
+
+    def _search_web(self, request):
+
+        destinations = request.destinations or ["Kathmandu"]
+
+        place = ", ".join(destinations[:3])
+
+        days_text = f" {request.days} day" if request.days > 0 else ""
+
+        queries = []
+
+        if request.days > 0:
+            queries.append(
+                f"{place} Nepal tour package itinerary {request.days} days"
+            )
+        else:
+            queries.append(
+                f"{place} Nepal tour package itinerary"
+            )
+
+        queries.append(
+            f"{place} Nepal tour package price per person{days_text}"
+        )
+
+        results = []
+
+        for query in queries:
+            results.extend(
+                self.web_search.search(query)
+            )
+
+        return results
+
+    def _format_web_data(self, web_data):
+
+        lines = [
+            "\nLIVE WEB DATA (from the internet, use this for realistic "
+            "routes, activities, and current market prices):"
+        ]
+
+        for item in web_data[:12]:
+            title = item.get("title", "")
+            url = item.get("url", "")
+            snippet = item.get("snippet", "")
+
+            lines.append(f"- {title} ({url})")
+            if snippet:
+                lines.append(f"  {snippet}")
+
+        return "\n".join(lines)
 
     def _call_api(self, prompt):
 
@@ -200,8 +268,10 @@ class DeepSeekItineraryGenerator:
 
         if isinstance(data, dict):
             days = data.get("itinerary") or data.get("days") or []
+            self.last_price_estimate = self._extract_price_estimate(data)
         else:
             days = data
+            self.last_price_estimate = None
 
         if not isinstance(days, list) or not days:
             raise ValueError("AI response contained no itinerary days")
@@ -219,6 +289,50 @@ class DeepSeekItineraryGenerator:
             raise ValueError("AI itinerary was empty after normalization")
 
         return result
+
+    def _extract_price_estimate(self, data):
+
+        estimate = (
+            data.get("price_estimate")
+            or data.get("estimated_price")
+            or data.get("price")
+        )
+
+        if not estimate:
+            return None
+
+        if isinstance(estimate, (int, float)):
+            return {
+                "per_person": float(estimate),
+                "currency": "USD",
+                "note": "",
+            }
+
+        if not isinstance(estimate, dict):
+            return None
+
+        per_person = estimate.get("per_person")
+        currency = str(estimate.get("currency") or "USD").upper()
+        note = str(estimate.get("note") or "").strip()
+
+        if per_person is None:
+            low = estimate.get("low")
+            high = estimate.get("high")
+            if isinstance(low, (int, float)) and isinstance(high, (int, float)):
+                return {
+                    "per_person": round(
+                        (float(low) + float(high)) / 2, 2
+                    ),
+                    "currency": currency,
+                    "note": f"Range {low}-{high} {currency}. {note}".strip(),
+                }
+            return None
+
+        return {
+            "per_person": float(per_person),
+            "currency": currency,
+            "note": note,
+        }
 
     def _normalize_day(self, day, fallback_day):
 
@@ -313,6 +427,8 @@ class SmartItineraryGenerator:
         self.deepseek_engine = DeepSeekItineraryGenerator()
         self.openai_engine = OpenAIItineraryGenerator()
 
+        self.last_price_estimate = None
+
     def _select_ai_engine(self):
 
         if self.provider == "deepseek":
@@ -329,6 +445,8 @@ class SmartItineraryGenerator:
 
     def generate(self, request):
 
+        self.last_price_estimate = None
+
         if self.mode == "rule":
             return self.rule_engine.generate(request)
 
@@ -339,6 +457,9 @@ class SmartItineraryGenerator:
 
             if ai_engine is not None:
                 ai_result = ai_engine.generate(request)
+                self.last_price_estimate = (
+                    ai_engine.last_price_estimate
+                )
 
         if ai_result is None:
             logger.info(
@@ -347,6 +468,7 @@ class SmartItineraryGenerator:
                 self.mode,
                 self.provider,
             )
+            self.last_price_estimate = None
             return self.rule_engine.generate(request)
 
         return ai_result

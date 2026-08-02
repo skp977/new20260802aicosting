@@ -40,6 +40,10 @@ class ManualRequestOrchestrator:
 
         itinerary = self.itinerary_engine.generate(request)
 
+        price_estimate = getattr(
+            self.itinerary_engine, "last_price_estimate", None
+        )
+
         costing = self.costing_engine.calculate(request, itinerary)
 
         self.storage.save_request(request)
@@ -57,6 +61,7 @@ class ManualRequestOrchestrator:
         return {
             "request": request,
             "itinerary": itinerary,
-            "costing": costing
+            "costing": costing,
+            "price_estimate": price_estimate
         }
 

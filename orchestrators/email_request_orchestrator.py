@@ -87,10 +87,15 @@ class EmailRequestOrchestrator:
             self._whatsapp_text(request, costing)
         )
 
+        price_estimate = getattr(
+            self.itinerary_engine, "last_price_estimate", None
+        )
+
         return {
             "request": request,
             "itinerary": itinerary,
             "costing": costing,
+            "price_estimate": price_estimate,
             "lead_file": lead_path,
             "notifications": {
                 "customer_reply": {"ok": reply_ok, "message": reply_msg},

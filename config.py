@@ -86,6 +86,12 @@ CONFIG = {
     "OPENAI_TIMEOUT": int(os.getenv("OPENAI_TIMEOUT", "60")),
 
     "ITINERARY_ENGINE": os.getenv("ITINERARY_ENGINE", "auto"),
+
+    # Live web search (DuckDuckGo, keyless)
+    "WEB_SEARCH_ENABLED": _as_bool(os.getenv("WEB_SEARCH_ENABLED"), True),
+    "SEARCH_PROVIDER": os.getenv("SEARCH_PROVIDER", "duckduckgo"),
+    "SEARCH_MAX_RESULTS": int(os.getenv("SEARCH_MAX_RESULTS", "5")),
+    "SEARCH_TIMEOUT": int(os.getenv("SEARCH_TIMEOUT", "20")),
 }
 
 

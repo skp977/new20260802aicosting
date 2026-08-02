@@ -126,6 +126,17 @@ input[type=file] { font-size: 14px; }
   </table>
 </div>
 
+{% if price_estimate %}
+<div class="card" style="border-left: 4px solid #16a34a;">
+  <h3>Est. Market Price <small class="muted">(from live web data)</small></h3>
+  <table>
+    <tr><th>Item</th><th>Amount</th></tr>
+    <tr class="total"><td>Per person estimate</td><td>{{ price_estimate.per_person }} {{ price_estimate.currency }}</td></tr>
+  </table>
+  {% if price_estimate.note %}<p class="muted">{{ price_estimate.note }}</p>{% endif %}
+</div>
+{% endif %}
+
 {% if suggestions %}
 <div class="card">
   <h3>Suggestions</h3>
