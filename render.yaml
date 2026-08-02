@@ -1,12 +1,11 @@
 # Render Blueprint for PM Automation (test deploy)
-# Replace <YOUR_GITHUB_USERNAME> below with your GitHub username.
 # After pushing to GitHub, use: New + -> Blueprint -> Select this repo.
 
 services:
   - type: web
     name: pmautomation-web
     runtime: docker
-    repo: https://github.com/<YOUR_GITHUB_USERNAME>/pmautomation
+    repo: https://github.com/skp977/new20260802aicosting
     plan: free
     dockerfilePath: deploy/Dockerfile
     dockerContext: .
@@ -46,7 +45,7 @@ services:
   - type: web
     name: pmautomation-api
     runtime: docker
-    repo: https://github.com/<YOUR_GITHUB_USERNAME>/pmautomation
+    repo: https://github.com/skp977/new20260802aicosting
     plan: free
     dockerfilePath: deploy/Dockerfile
     dockerContext: .
@@ -74,7 +73,7 @@ services:
   - type: web
     name: pmautomation-waha
     runtime: docker
-    repo: https://github.com/<YOUR_GITHUB_USERNAME>/pmautomation
+    repo: https://github.com/skp977/new20260802aicosting
     plan: free
     dockerfilePath: deploy/Dockerfile.waha
     dockerContext: .
